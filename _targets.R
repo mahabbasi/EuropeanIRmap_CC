@@ -40,7 +40,7 @@ prepare_hr_predictors <- tar_plan(
   ## gfdl-esm4 GCM --------
   tar_target(
     name = 'hr_flow_gfdl_hist',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/GFDL-ESM4/hist"),
                                 out_dir = file.path(watergap_extractdir, 'GFDL-ESM4/historical'),
                                 prpts_path = file.path(root_dir, 
@@ -50,7 +50,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_gfdl_ssp126',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/GFDL-ESM4/future/ssp126"),
                                 out_dir = file.path(watergap_extractdir, 'GFDL-ESM4/future/ssp126'),
                                 prpts_path = file.path(root_dir, 
@@ -60,7 +60,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_gfdl_ssp585',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/GFDL-ESM4/future/ssp585"),
                                 out_dir = file.path(watergap_extractdir, 'GFDL-ESM4/future/ssp585'),
                                 prpts_path = file.path(root_dir, 
@@ -72,7 +72,7 @@ prepare_hr_predictors <- tar_plan(
   ## ipsl-cm6a-lr GCM --------
   tar_target(
     name = 'hr_flow_ipsl_hist',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/IPSL-CM6A-LR/hist"),
                                 out_dir = file.path(watergap_extractdir, 'IPSL-CM6A-LR/historical'),
                                 prpts_path = file.path(root_dir, 
@@ -82,7 +82,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_ipsl_ssp126',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/IPSL-CM6A-LR/future/ssp126"),
                                 out_dir = file.path(watergap_extractdir, 'IPSL-CM6A-LR/future/ssp126'),
                                 prpts_path = file.path(root_dir, 
@@ -92,7 +92,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_ipsl_ssp585',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/IPSL-CM6A-LR/future/ssp585"),
                                 out_dir = file.path(watergap_extractdir, 'IPSL-CM6A-LR/future/ssp585'),
                                 prpts_path = file.path(root_dir, 
@@ -104,7 +104,7 @@ prepare_hr_predictors <- tar_plan(
   ## MPI-ESM1-2-HR GCM -----
   tar_target(
     name = 'hr_flow_mpi_hist',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/MPI-ESM1-2-HR/hist"),
                                 out_dir = file.path(watergap_extractdir, 'MPI-ESM1-2-HR/historical'),
                                 prpts_path = file.path(root_dir, 
@@ -114,7 +114,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_mpi_ssp126',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/MPI-ESM1-2-HR/future/ssp126"),
                                 out_dir = file.path(watergap_extractdir, 'MPI-ESM1-2-HR/future/ssp126'),
                                 prpts_path = file.path(root_dir, 
@@ -124,7 +124,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_mpi_ssp585',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/MPI-ESM1-2-HR/future/ssp585"),
                                 out_dir = file.path(watergap_extractdir, 'MPI-ESM1-2-HR/future/ssp585'),
                                 prpts_path = file.path(root_dir, 
@@ -135,7 +135,7 @@ prepare_hr_predictors <- tar_plan(
   # MRI-ESM2-0 GCM -----------
   tar_target(
     name = 'hr_flow_mri_hist',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/MRI-ESM2-0/hist"),
                                 out_dir = file.path(watergap_extractdir, 'MRI-ESM2-0/historical'),
                                 prpts_path = file.path(root_dir, 
@@ -145,7 +145,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_mri_ssp126',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/MRI-ESM2-0/future/ssp126"),
                                 out_dir = file.path(watergap_extractdir, 'MRI-ESM2-0/future/ssp126'),
                                 prpts_path = file.path(root_dir, 
@@ -155,7 +155,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_mri_ssp585',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/MRI-ESM2-0/future/ssp585"),
                                 out_dir = file.path(watergap_extractdir, 'MRI-ESM2-0/future/ssp585'),
                                 prpts_path = file.path(root_dir, 
@@ -167,7 +167,7 @@ prepare_hr_predictors <- tar_plan(
   # UKESM1-0-LL GCM -----------
   tar_target(
     name = 'hr_flow_ukesm_hist',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/UKESM1-0-LL/hist"),
                                 out_dir = file.path(watergap_extractdir, 'UKESM1-0-LL/historical'),
                                 prpts_path = file.path(root_dir, 
@@ -177,7 +177,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_ukesm_ssp126',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/UKESM1-0-LL/future/ssp126"),
                                 out_dir = file.path(watergap_extractdir, 'UKESM1-0-LL/future/ssp126'),
                                 prpts_path = file.path(root_dir, 
@@ -187,7 +187,7 @@ prepare_hr_predictors <- tar_plan(
   ),
   tar_target(
     name = 'hr_flow_ukesm_ssp585',
-    command = extract_dsflow_hr(ncs_dir = file.path("/home/home5/dryver/rastertemp/nobackup/eu",
+    command = extract_dsflow_hr(ncs_dir = file.path(data_dir, "raw",
                                                     "Climate_forcing/UKESM1-0-LL/future/ssp585"),
                                 out_dir = file.path(watergap_extractdir, 'UKESM1-0-LL/future/ssp585'),
                                 prpts_path = file.path(root_dir, 
