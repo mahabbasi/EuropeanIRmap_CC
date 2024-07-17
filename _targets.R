@@ -23,8 +23,6 @@ lapply(list(watergap_extractdir), function(path) {
   })
 
 
-
-# replace /home/home5/dryver/rastertemp/nobackup/eu to file.path(data_dir, 'raw')
 # ---------------------- preparing high-resolution predicots ------------
 # a tibble of high-resolution predictors combination for mapping
 params <- tribble(
