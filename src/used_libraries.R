@@ -1,5 +1,5 @@
 suppressPackageStartupMessages(library(sf))
-suppressPackageStartupMessages(library(raster))
+suppressPackageStartupMessages(library(terra))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(qs))
 suppressPackageStartupMessages(library(data.table))
