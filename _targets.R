@@ -897,7 +897,97 @@ run_rf_gcms <- tar_plan(
 )
 
 # -------------------------- post-processsing ----------------------
-
+create_final_products <- tar_plan(
+  tar_target(
+    name = 'create_shp_fig2ab',
+    command = compute_qtot_fig2ab(in_dir=file.path(data_dir, 'predictors/LR/LR_qtot'),
+                                  out_dir=file.path(res_dir, 'figures/figure2'),
+                                  eu_countries_shp_dir=file.path(data_dir, 'shp/eu_countries_shp'))
+  ),
+  tar_target(
+    name = 'create_shp_fig2cd',
+    command = compute_hr_pc_fig2cd(in_dir=file.path(data_dir, 'predictors/HR'),
+                                  out_dir=file.path(res_dir, 'figures/figure2'),
+                                  eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
+  ),
+  tar_target(
+    name = 'create_shp_fig2ef',
+    command = compute_lowflow_pc_fig2ef(in_dir=file.path(data_dir, 'predictors/HR'),
+                                        out_dir=file.path(res_dir, 'figures/figure2'),
+                                        eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
+  ),
+  tar_target(
+    name = 'create_shp_fig3',
+    command = compute_np_changes_fig3(in_dir=file.path(res_dir, 'predictions/GCMs'),
+                                      out_dir=file.path(res_dir, 'figures/figure3'),
+                                      eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
+  ),
+  tar_target(
+    name = 'create_shp_figS2',
+    command = compute_np_changes_fig3(in_dir=file.path(res_dir, 'predictions/GCMs'),
+                                      out_dir=file.path(res_dir, 'figures/figureS2'),
+                                      eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'),
+                                      rcp_name='RCP2.6')
+  ),
+  tar_target(
+    name = 'create_plot_fig4',
+    command = ggcdf_np_climzones_fig4(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                      out_dir=file.path(res_dir, 'figures/figure4'),
+                                      in_shp_climcode_path=file.path(data_dir,
+                                                                     'shp/climatecode_shp/eu_nets_withclimcode_final.shp'),
+                                      climate_zone_png_dir=file.path(data_dir, 'others'))
+  ),
+  tar_target(
+    name = 'create_plot_fig5',
+    command = ggline_seasonality_fig5(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                      out_dir=file.path(res_dir, 'figures/figure5'))
+  ),
+  tar_target(
+    name = 'create_shp_fig7',
+    command = compute_interannual_vari_fig7(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                            out_dir=file.path(res_dir, 'figures/figure7'),
+                                            eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
+  ),
+  tar_target(
+    name = 'create_shp_figS5',
+    command = compute_interannual_vari_fig7(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                            out_dir=file.path(res_dir, 'figures/figureS5'),
+                                            eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'),
+                                            rcp_name='RCP2.6')
+  ),
+  tar_target(
+    name = 'create_plot_figS3',
+    command = ggline_seasonality_figS3(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                       out_dir=file.path(res_dir, 'figures/figureS3'),
+                                       in_shp_climcode_path=file.path(data_dir,
+                                                                      'shp/climatecode_shp/eu_nets_withclimcode_final.shp'))
+  ),
+  tar_target(
+    name = 'create_shp_figS4',
+    command = create_shp_figS4(in_dir=file.path(res_dir,'predictions/GCMs/future/ssp585/far_future'),
+                               out_dir=file.path(res_dir, 'figures/figureS4'),
+                               eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
+  ),
+  tar_target(
+    name = 'generate_table3',
+    command = compute_changes_table3(in_dir_rcp2.6=file.path(res_dir, 'figures/figureS2'),
+                                     in_dir_rcp8.5=file.path(res_dir, 'figures/figure3'))
+  ),
+  tar_target(
+    name = 'generate_table4',
+    command = compute_status_shifts_table4(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                           in_shp_climcode_path=file.path(data_dir,
+                                                                          'shp/climatecode_shp/eu_nets_withclimcode_final.shp'),
+                                           threshold=354)
+  ),
+  tar_target(
+    name = 'generate_tableS3',
+    command = compute_status_shifts_table4(in_dir=file.path(res_dir,'predictions/GCMs'),
+                                           in_shp_climcode_path=file.path(data_dir,
+                                                                          'shp/climatecode_shp/eu_nets_withclimcode_final.shp'),
+                                           threshold=346)
+  )
+)
 
 # --------------------------- run the pipeline ---------------------
 list(
@@ -905,3 +995,22 @@ list(
   # prepare_lr_predictors,
   # run_rf_gcms
 )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
