@@ -943,6 +943,10 @@ create_final_products <- tar_plan(
                                       out_dir=file.path(res_dir, 'figures/figure5'))
   ),
   tar_target(
+    name = 'create_plot_fig6',
+    command = ggbar_changes_fig6(out_dir=file.path(res_dir, 'figures/figure6'))
+  ),
+  tar_target(
     name = 'create_shp_fig7',
     command = compute_interannual_vari_fig7(in_dir=file.path(res_dir,'predictions/GCMs'),
                                             out_dir=file.path(res_dir, 'figures/figure7'),
@@ -991,9 +995,10 @@ create_final_products <- tar_plan(
 
 # --------------------------- run the pipeline ---------------------
 list(
-  prepare_hr_predictors
-  # prepare_lr_predictors,
-  # run_rf_gcms
+  # prepare_hr_predictors, # if the monthly HR streamflow is available, active this
+  # prepare_lr_predictors, # if the LR predictors are available, active this
+  # run_rf_gcms,           # if the two previous plans have been executed, active this
+  create_final_products    # the link for the required data is provided in data avialability statement of the paper
 )
 
 
