@@ -751,23 +751,128 @@ ggline_seasonality_fig5 <- function(in_dir, out_dir){
 }
 
 ## ---------------- The percentage of non-perennial reach-months figure 6-----------
-#' @title Plot the percentage of the non-perennial reach-months
+#' @title Plot the percentage of reach-months in the four intermittence classes
 #' 
-#' @description This function generates a plot that depicts Percentage of European reaches 
-#' that are non-perennial in each calendar month of the reference and future periods,
-#' distinguishing RCP2.6 and RCP8.5.
+#' @description This function generates a plot that depicts Percentage of reach-months for Europe
+#' and four climate zones in the reference period and the 2080s under RCP8.5.
 #' 
-#' @param `in_dir` the path to the intermittence status of the five GCMs for the reference period,
-#' and two future periods (the 2050s, the 2080s) under RCP2.6 and RCP8.5. 
-#' @param `out_dir` the path to the location that the final shapefiles are stored.
-#' @param `in_shp_climcode_path` the path to the shapefile of the climate zone of the 
-#' European network.
-#' @param `climate_zone_png_dir` the path to the png file of the six climate zones over Europe.
+#' @param `out_dir` the path to the location that the final plot is stored.
 #' 
 #' @export
 #' 
-ggbar_changes_fig6 <- function(){
+ggbar_changes_fig6 <- function(out_dir){
   
+  
+  if(!file.exists(out_dir)){
+    dir.create(out_dir, recursive = TRUE)
+  }
+  
+  
+  long_dt <- data.frame(
+    class = rep(c('Perennial', '1-5 no-flow days', '6-15 no-flow days',
+                  '16-29 no-flow days', '30-31 no-flow days'), times = 14),
+    period = rep(c("Reference","Reference","Reference","Reference","Reference",
+                   "Future", "Future", "Future", "Future", "Future"), times=7),
+    climate_zones = rep(c("Europe", "mediterranean / semi-arid", 'humid subtropical',
+                          'temperate oceanic', 'humid continental', 'sub-arctic',
+                          'polar/alpine'), each = 10),
+    median_value = c(96.4, 0.09,0.1, 0.27, 3.1, 95.1, 0.1, 0.12, 0.29, 4.3, 84.4, 0.19, 0.24, 0.45, 14.3,
+                     80.5, 0.20, 0.26, 0.40, 18.7, 95.5, 0.21, 0.19, 0.48, 3.6, 93.7, 0.22, 0.28, 0.47, 5.3,
+                     98.7, 0.12, 0.05, 0.28, 0.86, 98.2, 0.13,0.07, 0.29, 1.3, 98.1, 0.06, 0.11, 0.30, 1.5,
+                     97.4, 0.07,0.13, 0.35, 2.1, 99.9, 0.01, 0.01, 0.03, 0.03, 99.9, 0.01, 0.01, 0.03, 0.03,
+                     100, 0, 0, 0, 0, 100, 0, 0, 0, 0),
+    lower_bound = c(96.25, 0.087, 0.097, 0.25, 3.01, 94.75, 0.093, 0.11, 0.26, 4.03, 84.4, 0.19,0.23,0.43,13.8,
+                    77.7,0.17,0.21,0.39,18.5,95.4,0.17,0.12,0.41,3.4,92.5,0.21,0.25,0.42,5.2,98.6,0.1,0.04,0.25,0.7,
+                    97.9,0.12,0.06,0.26,1.2,97.9,0.05,0.1,0.27,1.4,97,0.06,0.1,0.32,1.7,100,0.01,0,0.02,0.02,99.8,0,
+                    0.01,0.02,0.01,100,0,0,0,0,100,0,0,0,0),
+    upper_bound = c(96.45,0.094,0.1,0.28,3.2,95.38,0.11,0.125,0.30,4.72,85.3,0.2,0.25,0.52,14.7,80.6,0.22,0.27,0.50,21.4,
+                    95.7,0.24,0.21,0.49,3.8,93.8,0.22,0.32,0.48,6.5,98.9,0.13,0.05,0.30,0.9,98.3,0.14,0.08,0.30,1.5,
+                    98.2,0.06,0.12,0.32,1.6,97.7,0.08,0.15,0.38,2.4,99.9,0.01,0.02,0.03,0.04,99.9,0.02,0.05,0.09,0.08,
+                    100, 0, 0, 0, 0, 100, 0, 0, 0, 0)
+  )
+  long_dt <- long_dt %>% filter(class != 'Perennial')
+  long_dt$class <- factor(long_dt$class, levels = c('1-5 no-flow days', '6-15 no-flow days',
+                                                    '16-29 no-flow days', '30-31 no-flow days'))
+  
+  long_dt_editted <- long_dt[1:40,]
+  
+  # Create a combined label for ClimateZone and Period
+  long_dt_editted$Zone_Period <- paste(long_dt_editted$climate_zones, long_dt_editted$period, sep = "_")
+  long_dt_editted$Zone_Period <- factor(long_dt_editted$Zone_Period,
+                                        levels = c("Europe_Reference", "Europe_Future",
+                                                   "mediterranean / semi-arid_Reference",
+                                                   "mediterranean / semi-arid_Future",
+                                                   "humid subtropical_Reference",
+                                                   "humid subtropical_Future",
+                                                   "temperate oceanic_Reference",
+                                                   "temperate oceanic_Future",
+                                                   "humid continental_Reference",
+                                                   "humid continental_Future"))
+  
+  # Calculate the cumulative position for each class segment
+  long_dt_editted <- long_dt_editted %>%
+    group_by(Zone_Period) %>%
+    arrange(desc(class)) %>%
+    mutate(CumulativeValue = cumsum(median_value),
+           ymin = CumulativeValue - median_value,  # Base of each segment
+           ymax = CumulativeValue,
+           label_y = (ymin + ymax) / 2)    
+  
+  # Define colors for each class
+  color_mapping <- c(
+    '1-5 no-flow days' = '#abd9e9',
+    '6-15 no-flow days' = 'chartreuse',
+    '16-29 no-flow days' = '#fee090',
+    '30-31 no-flow days' = '#FF6633'
+  )
+  
+  # Create the stacked bar plot with reference and future periods next to each other
+  outp <- ggplot(long_dt_editted, aes(x = Zone_Period, y = median_value, fill = class)) +
+    geom_bar(stat = "identity", position = "stack", width = 0.65) +
+    # Adding error bars
+    geom_errorbar(aes(ymin = ymin + lower_bound, ymax = ymin + upper_bound), 
+                  width = 0.3, 
+                  position = position_dodge(width = 0.8), 
+                  color = "black") +
+    scale_fill_manual(values = color_mapping) +
+    # geom_label_repel(aes(y = label_y, label = round(median_value, 2)), size = 5,
+    #                  show.legend = FALSE,  box.padding = 0.15)+
+    # scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
+    #               labels = trans_format("log10", math_format(10^.x))) +
+    # annotation_logticks(sides = "l") +
+    # geom_text(aes(y = label_y, label = round(median_value, 2)),
+    #           # position = position_stack(vjust = 0.5),
+    #           size=5, show.legend = FALSE)+
+    theme_bw(base_size = 16) +
+    labs(y = "Fraction of reach-months in the four intermittence classes [%]",
+         x = "") +
+    theme(legend.title = element_text(colour = "black",
+                                      size =  16),
+          legend.text =  element_text(colour = "black",
+                                      size =  14),
+          legend.position = c(0.70, 0.75),
+          axis.title = element_text(colour = "black",
+                                    size =  16),
+          axis.text = element_text(colour = "black",
+                                   size =  14)) +
+    guides(shape = 'none', alpha='none',
+           fill = guide_legend(nrow=2, title="Intermittence classes")) +
+    # theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_x_discrete(labels = c("Europe_Reference" = "Reference",
+                                "Europe_Future" = "Future",
+                                "mediterranean / semi-arid_Reference" = "Reference",
+                                "mediterranean / semi-arid_Future" = "Future",
+                                "humid subtropical_Reference" = "Reference",
+                                "humid subtropical_Future" = "Future",
+                                "temperate oceanic_Reference" = "Reference",
+                                "temperate oceanic_Future" = "Future",
+                                "humid continental_Reference" = "Reference",
+                                "humid continental_Future" = "Future"))
+  
+  ggsave(outp, filename = paste0(out_dir, "classes_fraction_stackedbar_Figure6_editted.png"),
+         units = "in", height = 8, width = 9, dpi = 500)
+  
+  return(NULL)
 }
 
 ##---------------- Compute the inter-annual variability of the non-perennial reaches figure 7 -----------
@@ -851,7 +956,7 @@ compute_interannual_vari_fig7 <- function(in_dir, eu_net_shp_dir, out_dir, rcp_n
                              hist_med_quantiles[,.(DRYVER_RIV, median_row)],
                              by='DRYVER_RIV')
   sf::write_sf(med_joined_st,
-               dsn = file.path(out_dir, 'median_inter_var_ref_fig7a.shp'))
+               dsn = file.path(out_dir, 'median_inter_var_ref_fig7b.shp'))
   
   hist_med_p90[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
   
@@ -859,7 +964,7 @@ compute_interannual_vari_fig7 <- function(in_dir, eu_net_shp_dir, out_dir, rcp_n
                              hist_med_p90[,.(DRYVER_RIV, median_p90)],
                              by='DRYVER_RIV')
   sf::write_sf(med_joined_st,
-               dsn = file.path(out_dir, 'Idry_p90_ref_fig7b.shp'))
+               dsn = file.path(out_dir, 'Idry_p90_ref_fig7a.shp'))
   
   #the quantile of interannual variability for rcp8.5 period for 5 GCMs
   rcp8.5_path_list <- list.files(path = in_rcp8.5_path, pattern = '.fst', full.names = TRUE)
@@ -877,10 +982,10 @@ compute_interannual_vari_fig7 <- function(in_dir, eu_net_shp_dir, out_dir, rcp_n
   if (rcp_name == 'RCP8.5') {
     
     sf::write_sf(med_joined_st,
-                 dsn = file.path(out_dir, paste0('median_inter_var_', rcp_name, '_fig7c.shp')))
+                 dsn = file.path(out_dir, paste0('Iiv_p90p10_', rcp_name, '_fig7d.shp')))
   } else {
     sf::write_sf(med_joined_st,
-                 dsn = file.path(out_dir, paste0('median_inter_var_', rcp_name, '_figS5a.shp')))
+                 dsn = file.path(out_dir, paste0('Iiv_p90p10_', rcp_name, '_figS5b.shp')))
   }
   
   differ_p90 <- rcp8.5_p90 - hist_p90
@@ -892,10 +997,10 @@ compute_interannual_vari_fig7 <- function(in_dir, eu_net_shp_dir, out_dir, rcp_n
   
   if (rcp_name == 'RCP8.5') {
     sf::write_sf(p90_joined_st,
-                 dsn = file.path(out_dir, paste0('Idry_p90_', rcp_name, '_fig7d.shp')))
+                 dsn = file.path(out_dir, paste0('Idry_p90_', rcp_name, '_fig7c.shp')))
   } else {
     sf::write_sf(p90_joined_st,
-                 dsn = file.path(out_dir, paste0('Idry_p90_', rcp_name, '_figS5b.shp')))
+                 dsn = file.path(out_dir, paste0('Idry_p90_', rcp_name, '_figS5a.shp')))
   }
 
   return(NULL)
