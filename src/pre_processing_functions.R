@@ -236,33 +236,30 @@ compute_hr_predictors <- function(in_path, out_path,n_window=3, Fun='mean',
   #create a vector of dates within a given period
   dates <- create_dates(start_year = start_year, end_year = end_year)
   
+  
   old_names <- names(data)
   new_names <- c('DRYVER_RIVID', dates)
   data.table::setnames(data,old_names, new_names)
-  
   data.table::setDT(data)
   
-  unique_dt <- unique(data, by = "DRYVER_RIVID")
-  melted_dt <- unique_dt %>% 
-    data.table::melt(.,id.vars='DRYVER_RIVID')
-  
-  order_vector <- melted_dt[,unique(DRYVER_RIVID)]
-  cat('start to add date column... ', '\n')
-  melted_dt[,'date' := fasttime::fastDate(variable)]
+  new_order <- seq.Date(as.Date("1981-01-01"),
+                        as.Date("2019-12-31"),
+                        "month") %>% as.character()
+  new_order <- c('DRYVER_RIVID', new_order)
+  data <- data[,..new_order]
   # ----------- the function for P3month ------------
-  meanpmon_dt <- lapply(seq_along(order_vector), function(i){
+  meanpmon_dt <- lapply(seq_along(1:dim(data)[1]), function(i){
     if (i %% 100000 == 0){
-      cat('extracting of HR predictor was completed for ', round(i/length(order_vector) * 100, digits = 2) , '% of reaches...', '\n')
+      cat('extracting of HR predictor was completed for ', round(i/dim(data)[1] * 100, digits = 2) , '% of reaches...', '\n')
     }
     
-    dd <- melted_dt[DRYVER_RIVID == order_vector[i]] %>% 
-      .[order(date)] %>% 
-      .[, mean_pmon:=shift(frollapply(value, n_window, FUN = Fun))]
+    dd <- frollapply(unlist(data[i, -1]), n = n_window, FUN = Fun,
+                     align = "right", fill = NA)
     #to fill the NA out with the nearest values.
     # here we filled out the first three month with the corresponding values in the next year.
-    near_values <- dd[13:(12+n_window)][,mean_pmon]
-    dd[1:n_window, mean_pmon:=near_values]
-    dd[,mean_pmon]
+    near_values <- dd[13:(12+n_window)]
+    dd[1:n_window] <- near_values
+    dd
   }) %>% 
     do.call('rbind',.) %>% 
     as.data.table()
@@ -332,27 +329,27 @@ compute_hr_interannual_predictors <- function(in_path, out_path,
   data.table::setnames(data,old_names, new_names)
   
   data.table::setDT(data)
+  dm <- as.Date(dates, format = "%Y-%m-%d")
+  new_order <- dm[order(dm)] %>% as.character()
   
-  unique_dt <- unique(data, by = "DRYVER_RIVID")
-  melted_dt <- unique_dt %>% 
-    data.table::melt(.,id.vars='DRYVER_RIVID')
+  date_vector <- as.Date(new_order, format = "%Y-%m-%d") %>% lubridate::month()
+  new_order <- c('DRYVER_RIVID', new_order)
+  data <- data[,..new_order]
   
-  order_vector <- melted_dt[,unique(DRYVER_RIVID)]
-  cat('start to add date column... ', '\n')
-  melted_dt[,'date' := fastDate(variable)]
   # ----------- the function for CV ------------
   cvmon_dt <- lapply(seq_along(order_vector), function(i){
     if (i %% 100000 == 0){
       cat('extracting of CV (near future) of HR predictor was completed for ',
-          round(i/length(order_vector) * 100, digits = 2) , '% of reaches...', '\n')
+          round(i/dim(data)[1] * 100, digits = 2) , '% of reaches...', '\n')
     }
     
-    dd <- melted_dt[DRYVER_RIVID == order_vector[i]] %>% 
-      .[order(date)] %>% .[date <=as.Date('2070-12-01')] %>% 
-      .[,month :=lubridate::month(date)]
-    dd[, cv_mon :=sd(value)/mean(value), by=month]
+    dd <- data[i,-1] %>% t() %>%
+      as.data.table()
+    dd[, date:=date_vector] %>% .[date <= as.Date('2070-12-01')] %>% 
+      dd[,cv_mon:=sd(V1, na.rm=TRUE)/mean(V1, na.rm=TRUE), by='date']
     
-    dd[1:12,cv_mon]
+    dd[1:12,sd_mon]
+    
   }) %>% 
     do.call('rbind',.) %>% 
     as.data.table()
@@ -366,13 +363,13 @@ compute_hr_interannual_predictors <- function(in_path, out_path,
   cvmon_dt <- lapply(seq_along(order_vector), function(i){
     if (i %% 100000 == 0){
       cat('extracting of CV (far future) of HR predictor was completed for ',
-          round(i/length(order_vector) * 100, digits = 2) , '% of reaches...', '\n')
+          round(i/dim(data)[1] * 100, digits = 2) , '% of reaches...', '\n')
     }
     
-    dd <- melted_dt[DRYVER_RIVID == order_vector[i]] %>% 
-      .[order(date)] %>% .[date > as.Date('2070-12-01')] %>% 
-      .[,month :=lubridate::month(date)]
-    dd[, cv_mon :=sd(value)/mean(value), by=month]
+    dd <- data[i,-1] %>% t() %>%
+      as.data.table()
+    dd[, date:=date_vector] %>% .[date > as.Date('2070-12-01')] %>% 
+      dd[,cv_mon:=sd(V1, na.rm=TRUE)/mean(V1, na.rm=TRUE), by='date']
     
     dd[1:12,cv_mon]
   }) %>% 
@@ -388,15 +385,16 @@ compute_hr_interannual_predictors <- function(in_path, out_path,
   cvmon_dt <- lapply(seq_along(order_vector), function(i){
     if (i %% 100000 == 0){
       cat('extracting of sd (near future) of HR predictor was completed for ',
-          round(i/length(order_vector) * 100, digits = 2) , '% of reaches...', '\n')
+          round(i/dim(data)[1] * 100, digits = 2) , '% of reaches...', '\n')
     }
     
-    dd <- melted_dt[DRYVER_RIVID == order_vector[i]] %>% 
-      .[order(date)] %>% .[date <= as.Date('2070-12-01')] %>% 
-      .[,month :=lubridate::month(date)]
-    dd[, cv_mon :=sd(value), by=month]
+    dd <- data[i,-1] %>% t() %>%
+      as.data.table()
+    dd[, date:=date_vector] %>% .[date <= as.Date('2070-12-01')] %>% 
+    .[,sd_mon:=sd(V1, na.rm=TRUE), by='date']
     
-    dd[1:12,cv_mon]
+    dd[1:12,sd_mon]
+
   }) %>% 
     do.call('rbind',.) %>% 
     as.data.table()
@@ -410,15 +408,16 @@ compute_hr_interannual_predictors <- function(in_path, out_path,
   cvmon_dt <- lapply(seq_along(order_vector), function(i){
     if (i %% 100000 == 0){
       cat('extracting of sd (far future) of HR predictor was completed for ',
-          round(i/length(order_vector) * 100, digits = 2) , '% of reaches...', '\n')
+          round(i/dim(data)[1] * 100, digits = 2) , '% of reaches...', '\n')
     }
     
-    dd <- melted_dt[DRYVER_RIVID == order_vector[i]] %>% 
-      .[order(date)] %>% .[date > as.Date('2070-12-01')] %>% 
-      .[,month :=lubridate::month(date)]
-    dd[, cv_mon :=sd(value), by=month]
     
-    dd[1:12,cv_mon]
+    dd <- data[i,-1] %>% t() %>%
+      as.data.table()
+    dd[, date:=date_vector] %>% .[date > as.Date('2070-12-01')] %>% 
+      .[,sd_mon:=sd(V1, na.rm=TRUE), by='date']
+    
+    dd[1:12,sd_mon]
   }) %>% 
     do.call('rbind',.) %>% 
     as.data.table()

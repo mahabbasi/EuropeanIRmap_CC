@@ -47,8 +47,8 @@ compute_qtot_fig2ab <- function(in_dir, out_dir, eu_countries_shp_dir) {
     terra::crop(., shap_countries) %>%
     terra::mask(., shap_countries)
   
-  terra::writeRaster(median_changes_masked, file.path(out_dir, 'meeting/LR_qtot',
-                                                      'median_qtot_pc_fig2a.tif'))
+  terra::writeRaster(median_changes_masked, file.path(out_dir,
+                                                      'median_qtot_pc_fig2a.tif'), overwrite=TRUE)
   
   ## Signal to noise ratio ------------
   r_median <- terra::app(perchange_rasters, median, na.rm = TRUE)
@@ -59,7 +59,7 @@ compute_qtot_fig2ab <- function(in_dir, out_dir, eu_countries_shp_dir) {
     terra::crop(., shap_countries) %>%
     terra::mask(., shap_countries)
   
-  terra::writeRaster(snr_masked, file.path(out_dir, 'meeting/LR_qtot',
+  terra::writeRaster(snr_masked, file.path(out_dir, 
                                            'SNR_qtot_pc_fig2b.tif'), overwrite=TRUE)
   
   return(NULL)
@@ -79,6 +79,10 @@ compute_qtot_fig2ab <- function(in_dir, out_dir, eu_countries_shp_dir) {
 #' @export
 #' 
 compute_hr_pc_fig2cd <- function(in_dir, out_dir, eu_net_shp_dir) {
+  
+  if (!dir.exists(out_dir)) {
+    dir.create(out_dir, recursive = TRUE)
+  }
   
   reach_shp <- sf::read_sf(eu_net_shp_dir)
   
@@ -134,6 +138,10 @@ compute_hr_pc_fig2cd <- function(in_dir, out_dir, eu_net_shp_dir) {
 #' 
 compute_lowflow_pc_fig2ef <- function(in_dir, out_dir, eu_net_shp_dir) {
   
+  if (!dir.exists(out_dir)) {
+    dir.create(out_dir, recursive = TRUE)
+  }
+  
   reach_shp <- sf::read_sf(eu_net_shp_dir)
   
   GCM_names <- c('GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL')
@@ -149,7 +157,7 @@ compute_lowflow_pc_fig2ef <- function(in_dir, out_dir, eu_net_shp_dir) {
     
     quantile_10_hist <- hist_fst[,apply(.SD, 1, function(row) quantile(row, probs = 0.1)),
                                  .SDcols=-'DRYVER_RIVID']
-    
+    rcp8.5_fst[,'DRYVER_RIVID':=hist_fst[,DRYVER_RIVID]]
     quantile_10_rcp8.5 <- rcp8.5_fst[,apply(.SD, 1, function(row) quantile(row, probs = 0.1)),
                                            .SDcols=-'DRYVER_RIVID']
     
@@ -175,8 +183,6 @@ compute_lowflow_pc_fig2ef <- function(in_dir, out_dir, eu_net_shp_dir) {
   
   ## signal-to-noise ratio --------
   m[,SNR:=median/(max-min)]
-  
-  setnames(m, 'DRYVER_RIVID', 'DRYVER_RIV')
   hist_joined_st <- dplyr::left_join(reach_shp, m[,.(DRYVER_RIV, SNR)], by='DRYVER_RIV')
   
   hist_joined_st <- hist_joined_st %>% 
@@ -456,7 +462,7 @@ ggcdf_np_climzones_fig4 <- function(in_dir, in_shp_climcode_path, out_dir,
            y = ylab) +
       scale_color_manual(values = color_values) +
       # scale_linetype_manual(values = linetype_values) +
-      annotation_custom(grid::textGrob(region_name, xloc, yloc, gp = gpar(fontsize=14, fontface="bold", col=col_region)))+
+      annotation_custom(grid::textGrob(region_name, xloc, yloc, gp = grid::gpar(fontsize=14, fontface="bold", col=col_region)))+
       theme(panel.grid.minor = element_blank(),axis.text=element_text(colour="black"),
             panel.grid.major = element_line(colour = "black", linewidth=0.1, linetype = 'dashed' ))+
       guides(linetype='none', color='none')
@@ -590,7 +596,7 @@ ggcdf_np_climzones_fig4 <- function(in_dir, in_shp_climcode_path, out_dir,
                     region_name= 'polar/alpine', xlab = "", ylab = '', col_region='#005CE6')
   
   # read the png file of the climate zone classes
-  map_image <- readPNG(file.path(climate_zone_png_dir, "climate_zones_classes.png"))
+  map_image <- png::readPNG(file.path(climate_zone_png_dir, "climate_zones_classes.png"))
   
   # combine the subplots and the imported PNG file into one figure 
   map_grob <- rasterGrob(map_image, width = unit(1, "npc"), height = unit(1, "npc"))
@@ -820,10 +826,10 @@ ggbar_changes_fig6 <- function(out_dir){
   
   # Define colors for each class
   color_mapping <- c(
-    '1-5 no-flow days' = '#abd9e9',
-    '6-15 no-flow days' = 'chartreuse',
-    '16-29 no-flow days' = '#fee090',
-    '30-31 no-flow days' = '#FF6633'
+    '1-5 no-flow days' = '#5ab4ac',
+    '6-15 no-flow days' = '#c7eae5',
+    '16-29 no-flow days' = '#f6e8c3',
+    '30-31 no-flow days' = '#d8b365'
   )
   
   # Create the stacked bar plot with reference and future periods next to each other
@@ -835,14 +841,6 @@ ggbar_changes_fig6 <- function(out_dir){
                   position = position_dodge(width = 0.8), 
                   color = "black") +
     scale_fill_manual(values = color_mapping) +
-    # geom_label_repel(aes(y = label_y, label = round(median_value, 2)), size = 5,
-    #                  show.legend = FALSE,  box.padding = 0.15)+
-    # scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
-    #               labels = trans_format("log10", math_format(10^.x))) +
-    # annotation_logticks(sides = "l") +
-    # geom_text(aes(y = label_y, label = round(median_value, 2)),
-    #           # position = position_stack(vjust = 0.5),
-    #           size=5, show.legend = FALSE)+
     theme_bw(base_size = 16) +
     labs(y = "Fraction of reach-months in the four intermittence classes [%]",
          x = "") +
@@ -1252,7 +1250,7 @@ ggline_seasonality_figS3 <- function(in_dir, out_dir, in_shp_climcode_path){
                      gp=gpar(col="black", fontsize=18), rot=90)
   
   #add to plot
-  p_out <- grid.arrange(arrangeGrob(final_plot, left = y_grob))
+  p_out <- gridExtra::grid.arrange(arrangeGrob(final_plot, left = y_grob))
   
   ggsave(p_out, filename = file.path(out_dir, 'all_climatezones_inone_errorbar_figS3.png'),
          dpi = 600, units = 'in', height = 12, width = 10)
@@ -1368,119 +1366,155 @@ create_shp_figS4 <- function(in_dir, eu_net_shp_dir, out_dir){
 #' @description This function generates the values that are presented in table 3 in the paper
 #' {}.
 #' 
-#' @param `in_dir_rcp2.6` the path to the intermittence status of the five GCMs for and the 2050s and 
-#' 2080s under RCP2.6. 
-#' @param `in_dir_rcp8.5` the path to the intermittence status of the five GCMs for the reference period,
-#' and the 2050s and 2080s under RCP8.5. 
+#' @param `in_dir` the path to the intermittence status of the five GCMs for and the 2050s and 
+#' 2080s under RCP2.6 and RCP8.5. 
+#' @param `out_dir` the path to the location that the final shapefiles are stored.
+#' @param `eu_net_shp_dir` the path to the shapefile of the European river network
 #' 
 #' @export
 #' 
-compute_changes_table3 <- function(in_dir_rcp2.6, in_dir_rcp8.5){
+compute_changes_table3 <- function(in_dir, out_dir, eu_net_shp_dir){
+  
+  # create the inputs paths
+  in_hist_path <- file.path(in_dir, 'historical') 
+  in_nearfuture_path_rcp2.6 <- file.path(in_dir, 'future/ssp126/near_future') 
+  in_farfuture_path_rcp2.6 <- file.path(in_dir, 'future/ssp126/far_future')
+  in_nearfuture_path_rcp8.5 <- file.path(in_dir, 'future/ssp585/near_future') 
+  in_farfuture_path_rcp8.5 <- file.path(in_dir, 'future/ssp585/far_future')
+  
+  
+  reach_shp <- sf::read_sf(eu_net_shp_dir)
+  # define a costumized function to compute the number of intermittent months
+  compute_number_inter_mon <- function(in_list){
+    lapply(seq_along(in_list), function(i){
+      in_dt <- fst::read_fst(in_list[[i]]) %>%
+        as.data.table()
+      col_counts_ratio <- rowSums(in_dt[, .SD[, -1, with = FALSE] > 0])
+    }) %>% 
+      do.call('cbind',.) %>% 
+      `colnames<-`(c('gfdl', 'ipsl', 'mpi',
+                     'mri', 'ukesm')) %>% 
+      as.data.table()
+  }
   
   ## total number of reach-months for 1.5 million reaches -> 552148560
   # Define breaks for classification
   breaks <- c(0, 10, 50, 500, 10000, Inf)
   labels <- c("1", "2", "3", '4', '5')
+  in_reach_ids <- fst::read_fst(hist_path_list[1]) %>% 
+    as.data.table() %>% .[,.(DRYVER_RIVID)]
+  # reference period ------
+  hist_path_list <- list.files(path = in_hist_path, pattern = '.fst', full.names = TRUE)
+  ref_preiod <- compute_number_inter_mon(hist_path_list)
+  ref_preiod[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
   
-  # reference period 
-  shp_dt <- sf::read_sf(file.path(in_dir_rcp8.5, 'median_inter_mon_reference_fig3a.shp'))
-  ref_preiod <- shp_dt %>% st_drop_geometry() %>% as.data.table() %>%
-    .[,.(upa,gfdl,ipsl,mpi,mri,ukesm, median_row)]
-  ref_preiod[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
-  d <- ref_preiod[,.N, by='classification'] %>% .[order(classification)]
+  ref_preiod1 <- left_join(ref_preiod, reach_dt, by='DRYVER_RIV')
+  ref_preiod1[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
+  d <- ref_preiod1[,.N, by='classification'] %>% .[order(classification)]
   reach_months_upstream_classes <- d[,N] * 360
-  data_ref <- ref_preiod[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
-  ref_med_allgcms <- data_ref[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 1)),
+  data_ref <- ref_preiod1[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
+  ref_med_allgcms <- data_ref[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 3)),
                               .SDcols=-'classification']
   
   ref_median <- ref_med_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
   ref_min <- ref_med_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
   ref_max <- ref_med_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
   
-  ref_med_eu <- round(colSums(data_ref[,-1])[2:6]/552148560 * 100,1) %>% median()
-  ref_min_eu <- round(colSums(data_ref[,-1])[2:6]/552148560 * 100,1) %>% min()
-  ref_max_eu <- round(colSums(data_ref[,-1])[2:6]/552148560 * 100,1) %>% max()
+  ref_med_eu <- round(colSums(data_ref[,-1])[1:5]/552148560 * 100,3) %>% median()
+  ref_min_eu <- round(colSums(data_ref[,-1])[1:5]/552148560 * 100,3) %>% min()
+  ref_max_eu <- round(colSums(data_ref[,-1])[1:5]/552148560 * 100,3) %>% max()
   
   ref_pre_combined <- rbind(c(ref_median, ref_med_eu), c(ref_min, ref_min_eu), c(ref_max, ref_max_eu))
   
+  ref_eu_gcms <- round(colSums(data_ref[,-1])[1:5]/552148560 * 100,3)
   # RCP2.6 in the 2050s ------
-  shp_dt_near <- sf::read_sf(file.path(in_dir_rcp2.6, 'median_inter_2050s_pp_figS2b.shp'))
-  m_near <- shp_dt_near %>% st_drop_geometry() %>% as.data.table() %>% .[,.(upa,gfdl,ipsl,mpi,mri,ukesm, median_row)]
-  m_near[, (colnames(m_near)[-1]):=lapply(.SD, function(x) x*3.6), .SDcols=colnames(m_near)[-1]]
-  m_near[, (colnames(m_near)) := lapply(.SD, abs)]
-  m_near[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
-  data_near <- m_near[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
-  rcp2.6_med_allgcms <- data_near[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 1)),
+  rcp2.6_near_list <- list.files(path = in_nearfuture_path_rcp2.6, pattern = '.fst', full.names = TRUE)
+  m_near <- compute_number_inter_mon(rcp2.6_near_list)
+  m_near[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+  m_near_rcp2.6 <- left_join(m_near, reach_dt, by='DRYVER_RIV')
+  
+  m_near_rcp2.6[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
+  data_near <- m_near_rcp2.6[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
+  rcp2.6_med_allgcms <- data_near[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 3)),
                                   .SDcols=-'classification']
+  recp2.6_dif_allgcms <- rcp2.6_med_allgcms - ref_med_allgcms
+  rcp2.6_median <- recp2.6_dif_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp2.6_min <- recp2.6_dif_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp2.6_max <- recp2.6_dif_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
   
-  rcp2.6_median <- rcp2.6_med_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp2.6_min <- rcp2.6_med_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp2.6_max <- rcp2.6_med_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  
-  rcp2.6_med_eu <- round(colSums(data_near[,-1])[3:7]/552148560 * 100,1) %>% median()
-  rcp2.6_min_eu <- round(colSums(data_near[,-1])[3:7]/552148560 * 100,1) %>% min()
-  rcp2.6_max_eu <- round(colSums(data_near[,-1])[3:7]/552148560 * 100,1) %>% max()
+  rcp2.6_eu_gcms <- round(colSums(data_near[,-1])[1:5]/552148560 * 100,3)
+  rcp2.6_eu_dif <- rcp2.6_eu_gcms - ref_eu_gcms
+  rcp2.6_med_eu <- rcp2.6_eu_dif %>% median()
+  rcp2.6_min_eu <- rcp2.6_eu_dif %>% min()
+  rcp2.6_max_eu <- rcp2.6_eu_dif %>% max()
   
   rcp2.6_2050s_pre_combined <- rbind(c(rcp2.6_median, rcp2.6_med_eu), c(rcp2.6_min, rcp2.6_min_eu),
                                      c(rcp2.6_max, rcp2.6_max_eu))
   ## RCP2.6 in the 2080s--------
-  shp_dt_end <- sf::read_sf(file.path(in_dir_rcp2.6, 'median_inter_2080s_pp_figS2c.shp'))
-  m_end <- shp_dt_end %>% st_drop_geometry() %>% as.data.table() %>% .[,.(upa,gfdl,ipsl,mpi,mri,ukesm, median_row)]
-  m_end[, (colnames(m_end)[-1]):=lapply(.SD, function(x) x*3.6), .SDcols=colnames(m_end)[-1]]
-  m_end[, (colnames(m_end)) := lapply(.SD, abs)]
-  m_end[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
-  data_far <- m_end[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
-  rcp2.6_med_allgcms <- data_far[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 1)),
+  rcp2.6_far_list <- list.files(path = in_farfuture_path_rcp2.6, pattern = '.fst', full.names = TRUE)
+  m_end <- compute_number_inter_mon(rcp2.6_far_list)
+  m_end[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+  m_end_rcp2.6 <- left_join(m_end, reach_dt, by='DRYVER_RIV')
+  m_end_rcp2.6[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
+  data_far <- m_end_rcp2.6[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
+  rcp2.6_med_allgcms <- data_far[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 3)),
                                  .SDcols=-'classification']
+  recp2.6_dif_allgcms <- rcp2.6_med_allgcms - ref_med_allgcms
+  rcp2.6_median <- recp2.6_dif_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp2.6_min <- recp2.6_dif_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp2.6_max <- recp2.6_dif_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
   
-  rcp2.6_median <- rcp2.6_med_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp2.6_min <- rcp2.6_med_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp2.6_max <- rcp2.6_med_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp2.6_eu_gcms <- round(colSums(data_far[,-1])[1:5]/552148560 * 100,3)
+  rcp2.6_eu_dif <- rcp2.6_eu_gcms - ref_eu_gcms
   
-  rcp2.6_med_eu <- round(colSums(data_far[,-1])[3:7]/552148560 * 100,1) %>% median()
-  rcp2.6_min_eu <- round(colSums(data_far[,-1])[3:7]/552148560 * 100,1) %>% min()
-  rcp2.6_max_eu <- round(colSums(data_far[,-1])[3:7]/552148560 * 100,1) %>% max()
+  rcp2.6_med_eu <- rcp2.6_eu_dif %>% median()
+  rcp2.6_min_eu <- rcp2.6_eu_dif %>% min()
+  rcp2.6_max_eu <- rcp2.6_eu_dif %>% max()
   
   rcp2.6_2080s_pre_combined <- rbind(c(rcp2.6_median, rcp2.6_med_eu), c(rcp2.6_min, rcp2.6_min_eu),
                                      c(rcp2.6_max, rcp2.6_max_eu))
   
   ## RCP8.5 in the 2050s -------------
-  shp_dt_near <- sf::read_sf(file.path(in_dir_rcp8.5, 'median_inter_2050s_pp_fig3b.shp'))
-  m_near <- shp_dt_near %>% st_drop_geometry() %>% as.data.table() %>% .[,.(upa,gfdl,ipsl,mpi,mri,ukesm, median_row)]
-  m_near[, (colnames(m_near)[-1]):=lapply(.SD, function(x) x*3.6), .SDcols=colnames(m_near)[-1]]
-  m_near[, (colnames(m_near)) := lapply(.SD, abs)]
-  m_near[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
-  data_near <- m_near[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
-  rcp8.5_med_allgcms <- data_near[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 1)),
+  rcp8.5_near_list <- list.files(path = in_nearfuture_path_rcp8.5, pattern = '.fst', full.names = TRUE)
+  m_near <- compute_number_inter_mon(rcp8.5_near_list)
+  m_near[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+  m_near_rcp8.5 <- left_join(m_near, reach_dt, by='DRYVER_RIV')
+  m_near_rcp8.5[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
+  data_near <- m_near_rcp8.5[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
+  rcp8.5_med_allgcms <- data_near[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 3)),
                                   .SDcols=-'classification']
+  recp8.5_dif_allgcms <- rcp8.5_med_allgcms - ref_med_allgcms
+  rcp8.5_median <- recp8.5_dif_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp8.5_min <- recp8.5_dif_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp8.5_max <- recp8.5_dif_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
   
-  rcp8.5_median <- rcp8.5_med_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp8.5_min <- rcp8.5_med_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp8.5_max <- rcp8.5_med_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp8.5_eu_gcms <- round(colSums(data_near[,-1])[1:5]/552148560 * 100,3)
+  rcp8.5_eu_dif <- rcp8.5_eu_gcms - ref_eu_gcms
   
-  rcp8.5_med_eu <- round(colSums(data_near[,-1])[3:7]/552148560 * 100,1) %>% median()
-  rcp8.5_min_eu <- round(colSums(data_near[,-1])[3:7]/552148560 * 100,1) %>% min()
-  rcp8.5_max_eu <- round(colSums(data_near[,-1])[3:7]/552148560 * 100,1) %>% max()
+  rcp8.5_med_eu <- rcp8.5_eu_dif %>% median()
+  rcp8.5_min_eu <- rcp8.5_eu_dif %>% min()
+  rcp8.5_max_eu <- rcp8.5_eu_dif %>% max()
   
   rcp8.5_2050s_pre_combined <- rbind(c(rcp8.5_median, rcp8.5_med_eu), c(rcp8.5_min, rcp8.5_min_eu),
                                      c(rcp8.5_max, rcp8.5_max_eu))
   ## RCP8.5 in the 2080s --------
-  shp_dt_end <- sf::read_sf(file.path(in_dir_rcp8.5, 'median_inter_2080s_pp_fig3c.shp'))
-  m_end <- shp_dt_end %>% st_drop_geometry() %>% as.data.table() %>% .[,.(upa,gfdl,ipsl,mpi,mri,ukesm, median_row)]
-  m_end[, (colnames(m_end)[-1]):=lapply(.SD, function(x) x*3.6), .SDcols=colnames(m_end)[-1]]
-  m_end[, (colnames(m_end)) := lapply(.SD, abs)]
-  m_end[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
-  data_far <- m_end[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
-  rcp8.5_med_allgcms <- data_far[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 1)),
+  rcp8.5_far_list <- list.files(path = in_farfuture_path_rcp8.5, pattern = '.fst', full.names = TRUE)
+  m_end <- compute_number_inter_mon(rcp8.5_far_list)
+  m_end[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+  m_end_rcp8.5 <- left_join(m_end, reach_dt, by='DRYVER_RIV')
+  m_end_rcp8.5[, classification := cut(upa, breaks, labels = labels, include.lowest = TRUE)]
+  data_far <- m_end_rcp8.5[, lapply(.SD, sum), by='classification', .SDcols=-'classification']
+  rcp8.5_med_allgcms <- data_far[,lapply(.SD, function(x) round(x/reach_months_upstream_classes*100, 3)),
                                  .SDcols=-'classification']
-  
-  rcp8.5_median <- rcp8.5_med_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp8.5_min <- rcp8.5_med_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  rcp8.5_max <- rcp8.5_med_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
-  
-  rcp8.5_med_eu <- round(colSums(data_far[,-1])[3:7]/552148560 * 100,1) %>% median()
-  rcp8.5_min_eu <- round(colSums(data_far[,-1])[3:7]/552148560 * 100,1) %>% min()
-  rcp8.5_max_eu <- round(colSums(data_far[,-1])[3:7]/552148560 * 100,1) %>% max()
+  recp8.5_dif_allgcms <- rcp8.5_med_allgcms - ref_med_allgcms
+  rcp8.5_median <- recp8.5_dif_allgcms[,apply(.SD, 1, median), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp8.5_min <- recp8.5_dif_allgcms[,apply(.SD, 1, min), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp8.5_max <- recp8.5_dif_allgcms[,apply(.SD, 1, max), .SDcols=c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')]
+  rcp8.5_eu_gcms <- round(colSums(data_far[,-1])[1:5]/552148560 * 100,3)
+  rcp8.5_eu_dif <- rcp8.5_eu_gcms - ref_eu_gcms
+  rcp8.5_med_eu <- rcp8.5_eu_dif %>% median()
+  rcp8.5_min_eu <- rcp8.5_eu_dif %>% min()
+  rcp8.5_max_eu <- rcp8.5_eu_dif %>% max()
   
   rcp8.5_2080s_pre_combined <- rbind(c(rcp8.5_median, rcp8.5_med_eu), c(rcp8.5_min, rcp8.5_min_eu),
                                      c(rcp8.5_max, rcp8.5_max_eu))
@@ -1489,8 +1523,11 @@ compute_changes_table3 <- function(in_dir_rcp2.6, in_dir_rcp8.5){
   scenarios <- c(rep('reference', 3), rep('RCP2.6_2050s', 3), rep('RCP2.6_2080s', 3),
                  rep('RCP8.5_2050s', 3), rep('RCP8.5_2080s', 3))
   statistics_name <- c(rep(c('median', 'min', 'max'), 5)) 
-  final_table <- rbind(scenarios, statistics_name, ref_pre_combined, rcp2.6_2050s_pre_combined,
-                       rcp2.6_2080s_pre_combined, rcp8.5_2050s_pre_combined, rcp8.5_2080s_pre_combined)
+  prefinal_table <- rbind(ref_pre_combined, rcp2.6_2050s_pre_combined,
+                          rcp2.6_2080s_pre_combined, rcp8.5_2050s_pre_combined,
+                          rcp8.5_2080s_pre_combined) %>% 
+    round(., 1)
+  final_table <- cbind(scenarios, statistics_name, prefinal_table) %>% as.data.table()
   
   colnames(final_table) <- c('scenarios', 'statistics','[0-10)', '[10-50)', '[50-500)',
                              '[500-10,000)', '>10,000', 'Europe')
@@ -1616,8 +1653,8 @@ compute_status_shifts_table4 <- function(in_dir, in_shp_climcode_path,threshold=
   
   # model_names <- c('GFDL-ESM4', 'IPSL-CM6A-LR', 'MPI-ESM1-2-HR', 'MRI-ESM2-0', 'UKESM1-0-LL')
   in_list_hist <- list.files(file.path(in_dir, 'historical'), pattern = '.fst', full.names = TRUE)
-  in_list_rcp2.6 <- list.files(file.path(in_dir, 'future/ssp126'), pattern = '.fst', full.names = TRUE)
-  in_list_rcp8.5 <- list.files(file.path(in_dir, 'future/ssp585'), pattern = '.fst', full.names = TRUE)
+  in_list_rcp2.6 <- list.files(file.path(in_dir, 'future/ssp126/far_future'), pattern = '.fst', full.names = TRUE)
+  in_list_rcp8.5 <- list.files(file.path(in_dir, 'future/ssp585/far_future'), pattern = '.fst', full.names = TRUE)
   
   ## Compute the shifts for rcp2.6 in the 2080s -------------
   m_rcp2.6 <- lapply(1:5, function(i){
@@ -1672,13 +1709,16 @@ compute_status_shifts_table4 <- function(in_dir, in_shp_climcode_path,threshold=
   
   scenarios <- c(rep('RCP2.6_np2p', 3), rep('RCP2.6_p2np', 3),
                  rep('RCP8.5_np2p', 3), rep('RCP8.5_p2np', 3))
-  final_table <- rbind(scenarios, rcp2.6_np2p_med, rcp2.6_np2p_min,
+  
+  final_table <- rbind(rcp2.6_np2p_med, rcp2.6_np2p_min,
                        rcp2.6_np2p_max,rcp2.6_p2np_med, rcp2.6_p2np_min, rcp2.6_p2np_max,
                        rcp8.5_np2p_med, rcp8.5_np2p_min, rcp8.5_np2p_max,rcp8.5_p2np_med,
-                       rcp8.5_p2np_min, rcp8.5_p2np_max)
+                       rcp8.5_p2np_min, rcp8.5_p2np_max) %>% data.table::as.data.table()
+  final_table <- final_table %>% 
+    dplyr::mutate(scenarios = scenarios, .before='V1')
   
-  colnames(final_table) <- c('Europe', 'mediterranean/semi-arid', 'humid_subtropical',
-                             'temperate_oceanic', 'humid_continental', 'sub-arctic', 'polar/alpine')
+  colnames(final_table) <- c( 'scenarios', 'Europe', 'mediterranean/semi-arid', 'humid_subtropical',
+                              'temperate_oceanic', 'humid_continental', 'sub-arctic', 'polar/alpine')
   
   return(final_table)
   

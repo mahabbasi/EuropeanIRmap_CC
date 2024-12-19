@@ -21,7 +21,7 @@ The workflow is structured into the following steps:
     - **Purpose**: Extract the monthly downscaled streamflow of the five GCMs and prepare the seven dynamic HR predictors
     -Main functions for low-resolution predictors: `select_modify_lr_predictors`
     - **Purpose**: Prepare the two dynamic LR predictors
-    - **Inclusion**: (default: `FALSE`) due to the size of the predictors, we decided to exclude the data collection (`prepare_hr_predictors`, `prepare_lr_predictors`) in `_targets.R` script is deactivated. The raw files are not be able to be shared because of their size, in total over 3 TB. 
+    - **Inclusion**: (default: `FALSE`) due to the size of the predictors, we decided to exclude the data collection (`prepare_hr_predictors`, `prepare_lr_predictors`) plans in `_targets.R` script. The reason for this is that the raw files are not be able to be shared because of their size, in total over 3 TB. 
 2. **Model execution**:    
     - Main functions: `runmodels_over_period`
     - **Purpose**: Apply the trained RF models for the five GCMs for three different periods: 1)reference period (1985-2014), 2) 2050s (2041-2100), and 3) 2080s (2071-2100).
