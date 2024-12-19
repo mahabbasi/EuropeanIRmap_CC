@@ -7,7 +7,7 @@ tar_option_set(packages = c("sf", "data.table", "here"),
 tar_source("src/used_libraries.R")
 tar_source("src/pre_processing_functions.R")
 tar_source("src/make_prediction_functions.R")
-
+tar_source("src/post_processing_fuctions.R")
 #----------------------- define the paths ----------------------------------------
 root_dir <- here::here()
 data_dir <- file.path(root_dir, 'data')
@@ -973,16 +973,16 @@ create_final_products <- tar_plan(
                                eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
   ),
   tar_target(
-    name = 'generate_table3',
-    command = compute_changes_table3(in_dir_rcp2.6=file.path(res_dir, 'figures/figureS2'),
-                                     in_dir_rcp8.5=file.path(res_dir, 'figures/figure3'))
-  ),
-  tar_target(
     name = 'generate_table4',
     command = compute_status_shifts_table4(in_dir=file.path(res_dir,'predictions/GCMs'),
                                            in_shp_climcode_path=file.path(data_dir,
                                                                           'shp/climatecode_shp/eu_nets_withclimcode_final.shp'),
                                            threshold=354)
+  ),
+  tar_target(
+    name = 'generate_table3',
+    command = compute_changes_table3(in_dir_rcp2.6=file.path(res_dir, 'figures/figureS2'),
+                                     in_dir_rcp8.5=file.path(res_dir, 'figures/figure3'))
   ),
   tar_target(
     name = 'generate_tableS3',
