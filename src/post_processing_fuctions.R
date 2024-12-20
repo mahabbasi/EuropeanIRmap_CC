@@ -867,7 +867,7 @@ ggbar_changes_fig6 <- function(out_dir){
                                 "humid continental_Reference" = "Reference",
                                 "humid continental_Future" = "Future"))
   
-  ggsave(outp, filename = paste0(out_dir, "classes_fraction_stackedbar_Figure6_editted.png"),
+  ggsave(outp,filename = file.path(out_dir, "classes_fraction_stackedbar_Figure6_editted.png"),
          units = "in", height = 8, width = 9, dpi = 500)
   
   return(NULL)
@@ -1003,6 +1003,153 @@ compute_interannual_vari_fig7 <- function(in_dir, eu_net_shp_dir, out_dir, rcp_n
 
   return(NULL)
 }
+
+##---------------- Compute the LCCD and LCNP figure 8 and figure S6--------------------------------
+#' @title Produce LCCD and LCNP indicators
+#' 
+#' @description This function generates the shapefiles for figure 8 and figure S6 for the
+#' longest consecutive completely dry months and non-perennial months
+#' 
+#' @param `in_hist_path` the path to the intermittence status of the five GCMs for the reference period,
+#' and two future periods (the 2050s, the 2080s) under RCP2.6 and RCP8.5. 
+#' @param `in_rcp8.5_path` the path to the intermittence status of the five GCMs for the 2080s period, 
+#' under RCP8.5
+#' @param `in_rcp2.6_path` the path to the intermittence status of the five GCMs for the 2080s period, 
+#' under RCP2.6
+#' @param `in_shp_path` the path to the shapefile of the European river network.
+#' @param `out_shp_path` the path to the output shapefile
+#' @param `indicator` `default` = lccd, or lcnp
+#' 
+#' @export
+#' 
+create_lcnp_and_lccd_shp <- function(in_hist_path, in_rcp8.5_path, in_rcp2.6_path,
+                                     in_shp_path, out_shp_path, indicator = "lccd"){
+  if (!dir.exists(out_shp_path)) {
+    dir.create(out_shp_path, recursive = TRUE)
+  }
+  reach_shp <- sf::read_sf(in_shp_path)
+  
+  #customized functions 
+  # Function to calculate lengths of consecutive values larger than zero
+  consecutive_positive_lengths <- function(row, threshold = 1) {
+    rle_result <- rle(row >= threshold)
+    true_runs <- rle_result$values == TRUE
+    true_run_lengths <- rle_result$lengths[true_runs]
+    max_true_run_length <- max(true_run_lengths, default = 0)
+    return(max_true_run_length)
+  }
+  # define a costumized function to compute the longest consective intermittent months duration
+  compute_consective_inter_mon <- function(in_list, threshold){
+    lapply(seq_along(in_list), function(i){
+      print(i)
+      in_dt <- fst::read_fst(in_list[[i]]) %>%
+        as.data.table()
+      
+      # Apply the function row-wise
+      consecutive_lengths <- in_dt[,apply(.SD, 1, consecutive_positive_lengths, threshold=threshold),
+                                   .SDcols=-'DRYVER_RIVID']
+    }) %>% 
+      do.call('cbind',.) %>% 
+      `colnames<-`(c('gfdl', 'ipsl', 'mpi',
+                     'mri', 'ukesm')) %>% 
+      as.data.table()
+  }
+  
+  #the lccd and lcnp for the reference period for 5 GCMs
+  hist_path_list <- list.files(path = in_hist_path, pattern = '.fst', full.names = TRUE)
+  in_reach_ids <- fst::read_fst(hist_path_list[1]) %>% 
+    as.data.table() %>% .[,.(DRYVER_RIVID)]
+  
+  if (indicator == 'lccd') {
+    
+    hist_long_cons_class4 <- compute_consective_inter_mon(in_list = hist_path_list,
+                                                          threshold = 4)
+    hist_long_cons_class4_1 <- copy(hist_long_cons_class4)
+    hist_long_cons_class4[,median_row := apply(.SD, 1, median),
+                          .SDcols=names(hist_long_cons_class4)]
+    
+    hist_long_cons_class4[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+    med_joined_st <- left_join(reach_shp,
+                               hist_long_cons_class4[,.(DRYVER_RIV,gfdl, ipsl, mpi, mri, ukesm, median_row)],
+                               by='DRYVER_RIV')
+    sf::write_sf(med_joined_st,
+                 dsn = file.path(out_shp_path, 'lccd_hist_class4_fig8a.shp'))
+    
+    #compute the lccd for rcp2.6 and rcp8.5; class4 30-31 no-flow days within months
+    ## rcp2.6 ------
+    rcp2.6_path_list <- list.files(path = in_rcp2.6_path, pattern = '.fst', full.names = TRUE)
+    rcp2.6_long_cons_class4 <- compute_consective_inter_mon(in_list = rcp2.6_path_list,
+                                                            threshold = 4)
+    
+    delta_long_cons_class4 <- rcp2.6_long_cons_class4 -hist_long_cons_class4_1
+    delta_long_cons_class4[,median_row := apply(.SD, 1, median),
+                           .SDcols=names(delta_long_cons_class4)]
+    delta_long_cons_class4[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+    med_joined_st <- left_join(reach_shp,
+                               delta_long_cons_class4[,.(DRYVER_RIV, gfdl, ipsl, mpi, mri, ukesm, median_row)],
+                               by='DRYVER_RIV')
+    sf::write_sf(med_joined_st,
+                 dsn = file.path(out_shp_path, 'lccd_2080s_rcp2.6_fig8b.shp'))
+    ## rcp8.5 -------
+    rcp8.5_path_list <- list.files(path = in_rcp8.5_path, pattern = '.fst', full.names = TRUE)
+    rcp8.5_long_cons_class4 <- compute_consective_inter_mon(in_list = rcp8.5_path_list,
+                                                            threshold = 4)
+    delta_long_cons_class4 <- rcp8.5_long_cons_class4 -hist_long_cons_class4_1
+    delta_long_cons_class4[,median_row := apply(.SD, 1, median),
+                           .SDcols=names(delta_long_cons_class4)]
+    delta_long_cons_class4[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+    med_joined_st <- left_join(reach_shp,
+                               delta_long_cons_class4[,.(DRYVER_RIV, gfdl, ipsl, mpi, mri, ukesm, median_row)],
+                               by='DRYVER_RIV')
+    sf::write_sf(med_joined_st,
+                 dsn = file.path(out_shp_path, 'lccd_2080s_rcp8.5_fig8c.shp'))
+  } else {
+    hist_long_cons_larger_zero <- compute_consective_inter_mon(in_list = hist_path_list,
+                                                               threshold = 1)
+    hist_long_cons_larger_zero_1 <- copy(hist_long_cons_larger_zero)
+    hist_long_cons_larger_zero[,median_row := apply(.SD, 1, median),
+                               .SDcols=names(hist_long_cons_larger_zero)]
+    
+    hist_long_cons_larger_zero[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+    med_joined_st <- left_join(reach_shp,
+                               hist_long_cons_larger_zero[,.(DRYVER_RIV,gfdl, ipsl, mpi, mri, ukesm, median_row)],
+                               by='DRYVER_RIV')
+    sf::write_sf(med_joined_st,
+                 dsn = file.path(out_shp_path, 'lcnp_hist_largerzero_figS6a.shp'))
+    #compute the lcnp for rcp2.6 and rcp8.5; at least one no-flow days within months
+    ## rcp2.6 ------
+    rcp2.6_path_list <- list.files(path = in_rcp2.6_path, pattern = '.fst', full.names = TRUE)
+    rcp2.6_long_cons_larger_zero <- compute_consective_inter_mon(in_list = rcp2.6_path_list,
+                                                                 threshold = 1)
+    delta_long_cons_larger_zero <- rcp2.6_long_cons_larger_zero -hist_long_cons_larger_zero_1
+    delta_long_cons_larger_zero[,median_row := apply(.SD, 1, median),
+                                .SDcols=names(delta_long_cons_larger_zero)]
+    delta_long_cons_larger_zero[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+    med_joined_st <- left_join(reach_shp,
+                               delta_long_cons_larger_zero[,.(DRYVER_RIV,gfdl, ipsl, mpi, mri, ukesm, median_row)],
+                               by='DRYVER_RIV')
+    sf::write_sf(med_joined_st,
+                 dsn = file.path(out_shp_path, 'lcnp_2080s_rcp2.6_figS6b.shp'))
+    
+    ## rcp8.5 ------
+    rcp8.5_path_list <- list.files(path = in_rcp8.5_path, pattern = '.fst', full.names = TRUE)
+    rcp8.5_long_cons_larger_zero <- compute_consective_inter_mon(in_list = rcp8.5_path_list,
+                                                                 threshold = 1)
+    delta_long_cons_larger_zero <- rcp8.5_long_cons_larger_zero - hist_long_cons_larger_zero_1
+    delta_long_cons_larger_zero[,median_row := apply(.SD, 1, median),
+                                .SDcols=names(delta_long_cons_larger_zero)]
+    delta_long_cons_larger_zero[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
+    med_joined_st <- left_join(reach_shp,
+                               delta_long_cons_larger_zero[,.(DRYVER_RIV,gfdl, ipsl, mpi, mri, ukesm, median_row)],
+                               by='DRYVER_RIV')
+    sf::write_sf(med_joined_st,
+                 dsn = file.path(out_shp_path, 'lcnp_2080s_rcp8.5_figS6c.shp'))
+    
+  }
+  
+  return(NULL)
+}
+
 ## ------------ Compute the percentage of non-perennial reaches within climate zones figure S3-----------------
 #' @title Plot the seasonality of streamflow intermittence witht the six climate zones
 #' 
