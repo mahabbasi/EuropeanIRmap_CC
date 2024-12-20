@@ -1724,6 +1724,217 @@ compute_status_shifts_table4 <- function(in_dir, in_shp_climcode_path,threshold=
   
 }
 
-## ------------- Compute the percentage of reach-months in the five intermittence classes table S4 ------------
 
+## ------------- Compute the AOA for three sets ------------
+#' @title The analysis of area of applicability
+#' 
+#' @description This function produces the inside AOA fraction of reaches within a 0.1 deg grid cell.
+#' 
+#' @param `in_dir` the path to the predictors in three sests, reanalysis-based, GCMs-based reference,
+#' GCMs-based 2080s under RCP8.5. For dynamic predictors, the minimum values of the period was selected.
+#' @param `in_model` the path to the step 1 RF model to obtain the weight of the predictors.
+#' @param `in_data_obs` the path to the observations (station-months) of 3706 gauging stations to
+#' compute the dissimilarity index for training points
+#' @param `out_dir` the path to the aoa geotiffs
+#' 
+#' @export
+#' 
+analyze_aoa <- function(in_dir, in_model, in_data_obs, out_dir){
+  
+  if (!dir.exists(out_dir)){
+    dir.create(out_dir, recursive = TRUE)
+    
+  }
+  
+  model_step1 <- qs::qread(in_model)
+  model_data <- qs::qread(in_data_obs)
+  
+  model_data_edit <- model_data[,c(1, 3, 4:26)]
+  
+  model_data_edit[,target:=ifelse(target>0,1,0)]
+  min_data <- model_data_edit[, lapply(.SD, min, na.rm = TRUE),
+                              by = gaugeid, .SDcols = -c('gaugeid')]
+  median_data <- model_data_edit[, lapply(.SD, median, na.rm = TRUE),
+                                 by = gaugeid, .SDcols = -c('gaugeid')]
+  max_data <- model_data_edit[, lapply(.SD, max, na.rm = TRUE),
+                              by = gaugeid, .SDcols = -c('gaugeid')]
+  
+  data <- rbind(min_data, median_data, max_data)
+  
+  data[,gaugeid:=NULL]
+  data[,target:=as.factor(target)]
+  backend <- as_data_backend(data)
+  
+  task <- as_task_classif(backend, target = "target")
+  rsmp_cv <- rsmp("cv", folds = 3L)$instantiate(task)
+  
+  traindi <- trainDI_editted(
+    train = as.data.frame(task$data()),
+    variables = task$feature_names,
+    weight = data.frame(t(model_step1$model$learner$model$classif.ranger$model$variable.importance)),
+    CVtest = rsmp_cv$instance[order(row_id)]$fold)
+  
+  
+  aoa_fun <- lapply(1:12, function(i){
+    
+    splitted_pred <- rast(file.path(in_dir,
+                                    paste0('split_',i,'_predictors_15arcsec.tif')))
+    
+    AOA <- aoa(splitted_pred, trainDI = traindi,
+               train = as.data.frame(task$data()),
+               variables = task$feature_names,
+               weight = data.frame(t(model_step1$model$learner$model$classif.ranger$model$variable.importance)),
+               CVtest = rsmp_cv$instance[order(row_id)]$fold)
+    
+    prediction_raster1 <- terra::aggregate(AOA$AOA, fact=24, fun='mean', na.rm=TRUE)
+    
+    writeRaster(prediction_raster1, filename = file.path(out_dir,
+                                                         paste0('aoa_split_', i, '_0.1deg.tif')))
+    
+    print(i)
+  })
+  
+  return(NULL)
+}
+
+#' @title Calculate the difference of GCMs-based sets to reanalysis-based set
+#' 
+#' @description This function produces the difference of inside AOA fraction between
+#' GCMs-based sets and reanalysis-based set a 0.1 deg grid cell.
+#' 
+#' @param `in_dir_reanalysis` the path to the inside AOA fraction at 0.1 deg grid cell for
+#' reanalysis-based set.
+#' @param `in_dir_phase` the path to the inside AOA fraction at 0.1 deg grid cell for either
+#' 2080s or reference sets.
+#' @param `out_dir` the path to the aoa difference geotiffs between sets
+#' 
+#' @export
+#' 
+compute_aoa_dif <- function(in_dir_reanalysis, in_dir_phase, out_dir){
+  
+  if (!dir.exists(out_dir)){
+    dir.create(out_dir, recursive = TRUE)
+  }
+  
+  # merge reanalysis-based 
+  file_list <- list.files(path = in_dir_reanalysis,
+                          pattern = "0.1deg*\\.tif$", full.names = TRUE)
+  
+  file_list <- file_list[grepl("0.1deg", file_list)]
+  
+  # Read the GeoTIFF files into a list of SpatRaster objects
+  rasters <- lapply(file_list, rast)
+  # Merge the rasters into one SpatRaster object
+  reanalysis_raster <- do.call(terra::mosaic, rasters)
+  
+  # writeRaster(reanalysis_raster, 
+  #             filename = "aoa_prob_europe_0.1deg_1985to2014_min.tif",
+  #             overwrite = TRUE)
+  
+  gcms_models <- c('gfdl', 'ipsl', 'mpi', 'mri', 'ukesm')
+  lapply(seq_along(gcms_models), function(i){
+    # List of file paths to the GeoTIFF files
+    file_list <- list.files(path = file.path(in_dir_phase, gcms_models[i]),
+                            pattern = "0.1deg*\\.tif$", full.names = TRUE)
+    
+    file_list <- file_list[grepl("0.1deg", file_list)]
+    
+    # Read the GeoTIFF files into a list of SpatRaster objects
+    rasters <- lapply(file_list, rast)
+    # Merge the rasters into one SpatRaster object
+    merged_raster <- do.call(terra::mosaic, rasters)
+    # Save the merged raster to a new GeoTIFF file
+    dif_rasters <- merged_raster - reanalysis 
+    
+    writeRaster(dif_rasters,
+                filename = file.path(out_dir, paste0("dif_aoa_prob_europe_0.1deg_", gcms_models[i],".tif")),
+                overwrite = TRUE)
+    
+  })
+  
+  return(NULL)
+  
+}
+
+## ------------- Create the figure 9 and figureS7 ------------
+#' @title Produce the Geotiff for figures
+#' 
+#' @description This function produces the Geotiffs for figure 9 and figureS7
+#' 
+#' @param `in_dir` the path to the predictors in three sests, reanalysis-based, GCMs-based reference,
+#' GCMs-based 2080s under RCP8.5. For dynamic predictors, the minimum values of the period was selected.
+#' @param `figure9` `default`=TRUE, this present which figure is generating.
+#' @param `phase` a character that either `reference` or `2080s`.
+#' @param `out_dir` the path to the final aoa geotiffs of the figure
+#' 
+#' @export
+#' 
+create_fig9_and_S7 <- function(in_dir, out_dir, figure9=TRUE, phase ='reference') {
+  
+  
+  if (!dir.exists(out_dir)){
+    dir.create(out_dir, recursive = TRUE)
+  }
+  
+  # merge reanalysis-based 
+  file_list <- list.files(path = in_dir_reanalysis,
+                          pattern = "0.1deg*\\.tif$", full.names = TRUE)
+  
+  file_list <- file_list[grepl("0.1deg", file_list)]
+  
+  # Read the GeoTIFF files into a list of SpatRaster objects
+  rasters <- lapply(file_list, rast)
+  # Merge the rasters into one SpatRaster object
+  reanalysis_raster <- do.call(terra::mosaic, rasters)
+  
+  
+  file_list <- list.files(path = in_dir,
+                          pattern = ".tif$", full.names = TRUE)
+  
+  m <- lapply(seq_along(file_list), function(i){
+    
+    terra::rast(file_list[i])
+  }) %>% 
+    do.call(c, .)
+  
+  median_rast_ref <- terra::app(m, median)
+  max_rast_ref <- terra::app(diff_ref, max)
+  min_rast_ref <- terra::app(diff_ref, min)
+  
+  if (figure9) {
+    writeRaster(reanalysis_raster,
+                filename = file.path(out_dir, "aoa_prob_europe_0.1deg_1985to2014_min_fig9a.tif"),
+                overwrite = TRUE)
+    if (phase == 'referece') {
+      
+      writeRaster(median_rast_ref,
+                  filename = file.path(out_dir, "dif_aoa_prob_europe_0.1deg_ref_1985to2014_median_fiveGCM_fig9b.tif"),
+                  overwrite = TRUE)
+    } else {
+      writeRaster(median_rast_ref,
+                  filename = file.path(out_dir, "dif_aoa_prob_europe_0.1deg_2080s_1985to2014_median_fiveGCM_fig9c.tif"),
+                  overwrite = TRUE)
+    }
+  }
+  
+  if (!figure9 & phase == 'reference') {
+    writeRaster(max_rast_ref,
+                filename = file.path(out_dir, "dif_aoa_prob_europe_0.1deg_ref_1985to2014_max_fiveGCM_figS7b.tif"),
+                overwrite = TRUE)
+    writeRaster(min_rast_ref,
+                filename = file.path(out_dir, "dif_aoa_prob_europe_0.1deg_ref_1985to2014_min_fiveGCM_figS7a.tif"),
+                overwrite = TRUE)
+  }
+  
+  if (!figure9 & phase == '2080s') {
+    writeRaster(max_rast_ref,
+                filename = file.path(out_dir, "dif_aoa_prob_europe_0.1deg_2080s_1985to2014_max_fiveGCM_figS7d.tif"),
+                overwrite = TRUE)
+    writeRaster(min_rast_ref,
+                filename = file.path(out_dir, "dif_aoa_prob_europe_0.1deg_2080s_1985to2014_min_fiveGCM_figS7c.tif"),
+                overwrite = TRUE)
+  }
+  
+  return(NULL)
+}
 
