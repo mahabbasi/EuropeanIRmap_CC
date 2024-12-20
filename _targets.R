@@ -954,6 +954,23 @@ create_final_products <- tar_plan(
                                             eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
   ),
   tar_target(
+    name = 'create_shp_fig8_lccd',
+    command = create_lcnp_and_lccd_shp(in_hist_path = file.path(res_dir,'predictions/GCMs/historical'),
+                                       in_rcp8.5_path = file.path(res_dir,'predictions/GCMs/future/ssp585/far_future'),
+                                       in_rcp2.6_path = file.path(res_dir,'predictions/GCMs/future/ssp126/far_future'),
+                                      in_shp_path = file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'),
+                                      out_shp_path = file.path(res_dir, 'figures/figure8'))
+  ),
+  tar_target(
+    name = 'create_shp_figS6_lcnp',
+    command = create_lcnp_and_lccd_shp(in_hist_path = file.path(res_dir,'predictions/GCMs/historical'),
+                                       in_rcp8.5_path = file.path(res_dir,'predictions/GCMs/future/ssp585/far_future'),
+                                       in_rcp2.6_path = file.path(res_dir,'predictions/GCMs/future/ssp126/far_future'),
+                                       in_shp_path = file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'),
+                                       out_shp_path = file.path(res_dir, 'figures/figureS6'),
+                                       indicator = 'lcnp')
+  ),
+  tar_target(
     name = 'create_shp_figS5',
     command = compute_interannual_vari_fig7(in_dir=file.path(res_dir,'predictions/GCMs'),
                                             out_dir=file.path(res_dir, 'figures/figureS5'),
