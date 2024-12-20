@@ -242,8 +242,8 @@ compute_hr_predictors <- function(in_path, out_path,n_window=3, Fun='mean',
   data.table::setnames(data,old_names, new_names)
   data.table::setDT(data)
   
-  new_order <- seq.Date(as.Date("1981-01-01"),
-                        as.Date("2019-12-31"),
+  new_order <- seq.Date(as.Date(start_date),
+                        as.Date(end_date),
                         "month") %>% as.character()
   new_order <- c('DRYVER_RIVID', new_order)
   data <- data[,..new_order]
