@@ -8,6 +8,7 @@ tar_source("src/used_libraries.R")
 tar_source("src/pre_processing_functions.R")
 tar_source("src/make_prediction_functions.R")
 tar_source("src/post_processing_fuctions.R")
+tar_source("src/CAST_funs_editted.R")
 #----------------------- define the paths ----------------------------------------
 root_dir <- here::here()
 data_dir <- file.path(root_dir, 'data')
