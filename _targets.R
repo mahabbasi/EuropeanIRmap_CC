@@ -990,6 +990,119 @@ create_final_products <- tar_plan(
                                            in_shp_climcode_path=file.path(data_dir,
                                                                           'shp/climatecode_shp/eu_nets_withclimcode_final.shp'),
                                            threshold=346)
+  ),
+  tar_target(
+    name = 'reanalysis_aoa',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/reanalysis'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/reanalysis'))
+  ),
+  tar_target(
+    name = 'reference_aoa_gdal',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/reference/gfdl'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/reference/gfdl'))
+  ),
+  tar_target(
+    name = 'reference_aoa_ipsl',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/reference/ipsl'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/reference/ipsl'))
+  ),
+  tar_target(
+    name = 'reference_aoa_mpi',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/reference/mpi'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/reference/mpi'))
+  ),
+  tar_target(
+    name = 'reference_aoa_mri',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/reference/mri'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/reference/mri'))
+  ),
+  tar_target(
+    name = 'reference_aoa_ukesm',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/reference/ukesm'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/reference/ukesm'))
+  ),
+  tar_target(
+    name = 'future_aoa_gdal',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/2080s/gfdl'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/2080s/gfdl'))
+  ),
+  tar_target(
+    name = 'future_aoa_ipsl',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/2080s/ipsl'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/2080s/ipsl'))
+  ),
+  tar_target(
+    name = 'future_aoa_mpi',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/2080s/mpi'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/2080s/mpi'))
+  ),
+  tar_target(
+    name = 'future_aoa_mri',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/2080s/mri'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/2080s/mri'))
+  ),
+  tar_target(
+    name = 'future_aoa_ukesm',
+    command = analyze_aoa(in_dir=file.path(data_dir, 'predictors/min_five_GCMs/2080s/ukesm'),
+                          in_model=file.path(data_dir, 'rf_models/rftuned_step1.qs'),
+                          in_data_obs = file.path(data_dir, 'others/model_data.qs'),
+                          out_dir=file.path(res_dir, 'aoa/2080s/ukesm'))
+  ),
+  tar_target(
+    name = 'diff_aoa_ref_and_reanalysis',
+    command = compute_aoa_dif(in_dir_reanalysis=file.path(res_dir, 'aoa/reanalysis'),
+                              in_dir_phase=file.path(res_dir, 'aoa/reference'),
+                              out_dir=file.path(res_dir, 'aoa/reference/differences'))
+  ),
+  tar_target(
+    name = 'diff_aoa_2080s_and_reanalysis',
+    command = compute_aoa_dif(in_dir_reanalysis=file.path(res_dir, 'aoa/reanalysis'),
+                              in_dir_phase=file.path(res_dir, 'aoa/2080s'),
+                              out_dir=file.path(res_dir, 'aoa/2080s/differences'))
+  ),
+  tar_target(
+    name = 'create_figure9_ref',
+    command = create_fig9_and_S7(in_dir=file.path(res_dir, 'aoa/reference/differences'),
+                                 out_dir=file.path(res_dir, 'figures/figure9'))
+  ),
+  tar_target(
+    name = 'create_figure9_2080s',
+    command = create_fig9_and_S7(in_dir=file.path(res_dir, 'aoa/2080s/differences'),
+                                 out_dir=file.path(res_dir, 'figures/figure9'))
+  ),
+  tar_target(
+    name = 'create_figureS7_ref',
+    command = create_fig9_and_S7(in_dir=file.path(res_dir, 'aoa/reference/differences'),
+                                 out_dir=file.path(res_dir, 'figures/figureS7'),
+                                 figure9=FALSE,
+                                 phase='reference')
+  ),
+  tar_target(
+    name = 'create_figureS7_2080s',
+    command = create_fig9_and_S7(in_dir=file.path(res_dir, 'aoa/2080s/differences'),
+                                 out_dir=file.path(res_dir, 'figures/figureS7'),
+                                 figure9=FALSE,
+                                 phase='2080s')
   )
 )
 
