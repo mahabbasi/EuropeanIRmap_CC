@@ -36,6 +36,8 @@ The workflow is structured into the following steps:
 ## **Citation**
 If you use this repository or its resources, please cite the following paper:
 
+Abbasi, M., Messager, M. L., & Döll, P. (2024). Increased Streamflow Intermittence in Europe due to Climate Change Projected by Combining Global Hydrological Modeling and Machine Learning. Earth’s Future.” **Submitted**
+
 ## **Contact**
 For questions or issues, please contact:
 
