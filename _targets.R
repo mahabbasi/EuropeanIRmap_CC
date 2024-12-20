@@ -2,7 +2,7 @@ library(targets)
 library(tarchetypes)
 
 tar_option_set(packages = c("sf", "data.table", "here"),
-               memory = "transient", garbage_collection = TRUE, format = "qs")
+               memory = "transient", garbage_collection = TRUE)
 
 tar_source("src/used_libraries.R")
 tar_source("src/pre_processing_functions.R")
@@ -982,8 +982,8 @@ create_final_products <- tar_plan(
   ),
   tar_target(
     name = 'generate_table3',
-    command = compute_changes_table3(in_dir_rcp2.6=file.path(res_dir, 'figures/figureS2'),
-                                     in_dir_rcp8.5=file.path(res_dir, 'figures/figure3'))
+    command = compute_changes_table3(in_dir=file.path(res_dir, 'predictions/GCMs'),
+                                     eu_net_shp_dir=file.path(data_dir, 'shp/eu_nets/dryver_net_eu_final.shp'))
   ),
   tar_target(
     name = 'generate_tableS3',

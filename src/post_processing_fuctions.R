@@ -1368,12 +1368,11 @@ create_shp_figS4 <- function(in_dir, eu_net_shp_dir, out_dir){
 #' 
 #' @param `in_dir` the path to the intermittence status of the five GCMs for and the 2050s and 
 #' 2080s under RCP2.6 and RCP8.5. 
-#' @param `out_dir` the path to the location that the final shapefiles are stored.
 #' @param `eu_net_shp_dir` the path to the shapefile of the European river network
 #' 
 #' @export
 #' 
-compute_changes_table3 <- function(in_dir, out_dir, eu_net_shp_dir){
+compute_changes_table3 <- function(in_dir, eu_net_shp_dir){
   
   # create the inputs paths
   in_hist_path <- file.path(in_dir, 'historical') 
@@ -1384,6 +1383,7 @@ compute_changes_table3 <- function(in_dir, out_dir, eu_net_shp_dir){
   
   
   reach_shp <- sf::read_sf(eu_net_shp_dir)
+  reach_dt <- reach_shp %>% sf::st_drop_geometry() %>% as.data.table()
   # define a costumized function to compute the number of intermittent months
   compute_number_inter_mon <- function(in_list){
     lapply(seq_along(in_list), function(i){
@@ -1401,10 +1401,11 @@ compute_changes_table3 <- function(in_dir, out_dir, eu_net_shp_dir){
   # Define breaks for classification
   breaks <- c(0, 10, 50, 500, 10000, Inf)
   labels <- c("1", "2", "3", '4', '5')
-  in_reach_ids <- fst::read_fst(hist_path_list[1]) %>% 
-    as.data.table() %>% .[,.(DRYVER_RIVID)]
   # reference period ------
   hist_path_list <- list.files(path = in_hist_path, pattern = '.fst', full.names = TRUE)
+  in_reach_ids <- fst::read_fst(hist_path_list[1]) %>% 
+    as.data.table() %>% .[,.(DRYVER_RIVID)]
+  
   ref_preiod <- compute_number_inter_mon(hist_path_list)
   ref_preiod[, 'DRYVER_RIV' := in_reach_ids$DRYVER_RIVID]
   
