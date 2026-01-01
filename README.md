@@ -2,14 +2,14 @@
 
 This repository contains the code and resources used to conduct the analysis for the paper:  
 **"[Increased Streamflow Intermittence in Europe due to Climate Change Projected by Combining Global Hydrological Modeling and Machine Learning]"**  
-Submitted to *[Earth's Future]*, [2024].  
+Published to *[Earth's Future]*, [2025].  
 Authors: [Mahdi Abbasi, Mathis Loïc Messager, Petra Döll]
 
 ---
 
 ## **Overview**
-This repository documents the analytical workflow and methods used in the paper, providing a step-by-step guide to reproduce the results. The repository includes scripts for data preprocessing, exploratory data analysis, statistical modeling, and visualization. In this paper, we have studied the impact of climate change on streamflow intermittence in European reaches. The paper has been submitted to the Earth's Future (AGU) journal. 
-To see the final outcomes (i.e., intermittence status of 1.5 million European reaches under climate change in the future) and the shapefiles, please visit the repository{}.
+This repository documents the analytical workflow and methods used in the paper, providing a step-by-step guide to reproduce the results. The repository includes scripts for data preprocessing, exploratory data analysis, statistical modeling, and visualization. In this paper, we have studied the impact of climate change on streamflow intermittence in European reaches. The paper has been published to the Earth's Future (AGU) journal {https://doi.org/10.1029/2024EF005868}. 
+To see the final outcomes (i.e., intermittence status of 1.5 million European reaches under climate change in the future) and the shapefiles, please visit the repository{https://doi.org/10.5281/zenodo.14535981}.
 
 ---
 ## **Code Workflow**
@@ -36,7 +36,7 @@ The workflow is structured into the following steps:
 ## **Citation**
 If you use this repository or its resources, please cite the following paper:
 
-Abbasi, M., Messager, M. L., & Döll, P. (2024). Increased Streamflow Intermittence in Europe due to Climate Change Projected by Combining Global Hydrological Modeling and Machine Learning. Earth’s Future.” **Submitted**
+Abbasi, M., Messager, M. L., & Döll, P. (2025). Increased streamflow intermittence in Europe due to climate change projected by combining global hydrological modeling and machine learning. Earth's Future, 13(12), e2024EF005868. {https://doi.org/10.1029/2024EF005868} 
 
 ## **Contact**
 For questions or issues, please contact:
